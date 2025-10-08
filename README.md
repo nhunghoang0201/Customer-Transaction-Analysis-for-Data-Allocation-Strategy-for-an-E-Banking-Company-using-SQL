@@ -17,48 +17,114 @@
 ## 📌 Background & Overview  
 
 ### 🧭 Situation  
-**Data Bank** is a next-generation **Neo-Bank**, operating entirely digitally and linking customer balances with **cloud data storage** capacity. The bank wants to forecast total storage demand across customers to optimize infrastructure and reduce costs.  
+Data Bank, a next-generation Neo-Bank — a digital-only financial institution with no physical branches. Unlike traditional banks, Data Bank not only handles customer transactions but also offers secure, distributed cloud data storage linked directly to customer account balances.
 
-### ⚙️ Problem  
-Different data allocation can significantly impact both **storage cost** and **customer satisfaction**.  
-The management team needs to understand **how much data storage would be required** under three different allocation strategies.  
-| Option | Allocation Basis | Description |
-|---------|------------------|--------------|
-| **Option 1** | Previous month’s closing balance | Simple, fixed allocation once per month |
-| **Option 2** | 30-day rolling average balance | Smooth adjustment based on past 30-day average |
-| **Option 3** | Real-time balance | Instant data update after every transaction |
+### ❓ Business Question  
+How much data storage should be provisioned for customers under different allocation strategies?
 
-### ❓ Key Business Question  
-> How much data would have been required for each allocation option on a monthly basis?  
+Specifically, the project aims to answer:
+1. How do customer balances evolve over time?
+→ Calculate running and closing balances for each customer.
+
+2. How much data would be required under each allocation option?
+Option 1: Data allocated based on the previous month’s closing balance.
+Option 2: Data allocated based on the average balance in the last 30 days.
+Option 3: Data allocated and updated in real-time.
+
+3. Which option provides the best balance between accuracy and efficiency?
+
+### 👥 Target Audience
+
+This analysis is designed for:
+- Management Team: to plan data infrastructure and forecast costs.
+- Data & BI Teams: to monitor storage demand and customer trends.
+- Product Team: to align system performance with customer activity.
 
 ---
 
 ## 📂 Dataset Description & Data Structure  
 
-**Database:** `data_bank`  
+### 🗄️ Data Source  
+- **Source:** [Data Bank Case Study – 8 Week SQL Challenge](https://8weeksqlchallenge.com/case-study-4/)  
+- **Size:** ~5,000+ transactions across multiple customers and nodes  
 
-| Table | Description | Key Fields |
-|--------|--------------|-------------|
-| **regions** | List of bank operating regions | `region_id`, `region_name` |
-| **customer_nodes** | Tracks where each customer’s data and funds are stored | `customer_id`, `region_id`, `node_id`, `start_date`, `end_date` |
-| **customer_transactions** | Records deposits, withdrawals, and purchases | `customer_id`, `txn_date`, `txn_type`, `txn_amount` |
+### 📊 Data Structure & Relationships  
+
+#### Tables Used  
+The dataset contains **3 related tables** forming a relational schema:
+
+| Table Name | Description |
+|-------------|--------------|
+| `regions` | Contains information on geographic regions where Data Bank operates. |
+| `customer_nodes` | Tracks where each customer’s data and funds are stored, including time-based reallocation. |
+| `customer_transactions` | Contains all monetary activities — deposits, withdrawals, and purchases — per customer. |
+
+**🔗 Relationships:**  
+<img width="859" height="241" alt="image" src="https://github.com/user-attachments/assets/302688c3-bea1-48e7-a7d0-4bfd41fa8bd4" />
+
+#### Table Schema & Data Snapshot  
 
 <details>
-  <summary>📸 Example Data Snapshot</summary>
+  <summary>🗺️ Table 1: regions</summary>
 
-**customer_transactions**
-| customer_id | txn_date   | txn_type | txn_amount |
-|--------------|------------|----------|-------------|
+| Column Name | Data Type | Description |
+|--------------|------------|-------------|
+| region_id | INT | Unique identifier for each region |
+| region_name | STRING | Name of the geographic region |
+
+**Sample Data**
+| region_id | region_name |
+|------------|--------------|
+| 1 | Africa |
+| 2 | America |
+| 3 | Asia |
+
+</details>
+
+<details>
+  <summary>🌐 Table 2: customer_nodes</summary>
+
+| Column Name | Data Type | Description |
+|--------------|------------|-------------|
+| customer_id | INT | Unique identifier for each customer |
+| region_id | INT | Region assigned to the customer |
+| node_id | INT | Node ID where customer’s data and funds are stored |
+| start_date | DATE | Allocation start date |
+| end_date | DATE | Allocation end date (until reallocation) |
+
+**Sample Data**
+| customer_id | region_id | node_id | start_date | end_date |
+|--------------|------------|----------|-------------|-----------|
+| 1 | 3 | 4 | 2020-01-02 | 2020-01-03 |
+| 2 | 3 | 5 | 2020-01-03 | 2020-01-17 |
+| 3 | 5 | 4 | 2020-01-27 | 2020-02-18 |
+| 4 | 5 | 4 | 2020-01-07 | 2020-01-19 |
+| 5 | 3 | 3 | 2020-01-15 | 2020-01-23 |
+
+</details>
+
+<details>
+  <summary>💳 Table 3: customer_transactions</summary>
+
+| Column Name | Data Type | Description |
+|--------------|------------|-------------|
+| customer_id | INT | Unique identifier for each customer |
+| txn_date | DATE | Date of transaction |
+| txn_type | STRING | Type of transaction (`deposit`, `withdrawal`, or `purchase`) |
+| txn_amount | FLOAT | Transaction amount |
+
+**Sample Data**
+| customer_id | txn_date | txn_type | txn_amount |
+|--------------|-----------|-----------|-------------|
 | 429 | 2020-01-21 | deposit | 82 |
 | 155 | 2020-01-10 | deposit | 712 |
 | 398 | 2020-01-01 | deposit | 196 |
+| 255 | 2020-01-14 | deposit | 563 |
 | 185 | 2020-01-29 | deposit | 626 |
 
 </details>
 
----
-
-## 📊 SQL Analysis & Key Insights  
+## 📊 Analysis & Key Insights  
 
 ### 🔹 Step 1: Compute Running Balance  
 
