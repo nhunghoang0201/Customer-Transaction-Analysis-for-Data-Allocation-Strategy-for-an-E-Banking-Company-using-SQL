@@ -1,8 +1,8 @@
-# 🏦 Customer Transaction Analysis for Data Allocation Strategy in a Neo-Banking Company using SQL  
+# 🏦 Customer Transaction Analysis for Data Allocation Strategy in a E-Banking Company using SQL  
 
 **Author:** Hoang Thi Hong Nhung  
 **Date:** 2025-09-30  
-**Tools Used:** SQL (BigQuery), Python (for optional analysis visualization)  
+**Tools Used:** SQL (BigQuery)
 
 ---
 
@@ -17,21 +17,19 @@
 ## 📌 Background & Overview  
 
 ### 🧭 Situation  
-**Data Bank** is a next-generation **Neo-Bank**, operating entirely digitally and linking customer balances with **cloud data storage** capacity. The bank wants to forecast total storage demand across customers to optimize infrastructure and reduce cost.  
+**Data Bank** is a next-generation **Neo-Bank**, operating entirely digitally and linking customer balances with **cloud data storage** capacity. The bank wants to forecast total storage demand across customers to optimize infrastructure and reduce costs.  
 
 ### ⚙️ Problem  
-Different data allocation models can significantly impact both **storage cost** and **customer satisfaction**.  
+Different data allocation can significantly impact both **storage cost** and **customer satisfaction**.  
 The management team needs to understand **how much data storage would be required** under three different allocation strategies.  
-
-### ❓ Key Business Question  
-> How much data would have been required for each allocation option on a monthly basis?  
-
-### 🧩 Three Allocation Options  
 | Option | Allocation Basis | Description |
 |---------|------------------|--------------|
 | **Option 1** | Previous month’s closing balance | Simple, fixed allocation once per month |
 | **Option 2** | 30-day rolling average balance | Smooth adjustment based on past 30-day average |
 | **Option 3** | Real-time balance | Instant data update after every transaction |
+
+### ❓ Key Business Question  
+> How much data would have been required for each allocation option on a monthly basis?  
 
 ---
 
