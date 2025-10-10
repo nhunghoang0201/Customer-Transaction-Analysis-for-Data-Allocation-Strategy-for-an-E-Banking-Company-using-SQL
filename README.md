@@ -187,7 +187,7 @@ WHERE EXTRACT(YEAR FROM end_date) != 9999;
 | 14.6 | 
 
 **Insight:**  
-> On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
+ On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
 
 ---
 ### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
