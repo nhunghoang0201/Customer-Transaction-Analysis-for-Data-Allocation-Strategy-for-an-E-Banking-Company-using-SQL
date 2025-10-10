@@ -24,11 +24,12 @@ How much data storage should be provisioned for customers under different alloca
 
 Specifically, the project aims to answer:
 1. How much data would be required under each allocation option?
-Option 1: Data allocated based on the previous month’s closing balance.
 
-Option 2: Data allocated based on the average balance in the last 30 days.
+- Option 1: Data allocated based on the previous month’s closing balance.
 
-Option 3: Data allocated and updated in real-time.
+- Option 2: Data allocated based on the average balance in the last 30 days.
+
+- Option 3: Data allocated and updated in real-time.
 
 3. Which option provides the best balance between accuracy and efficiency?
 
