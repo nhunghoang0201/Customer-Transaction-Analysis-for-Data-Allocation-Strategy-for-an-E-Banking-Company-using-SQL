@@ -146,7 +146,7 @@ running_balance AS (
   FROM netamount
 )
 SELECT * FROM running_balance;
-...
+```
 
 **Result:**
 
@@ -161,6 +161,7 @@ SELECT * FROM running_balance;
 **Insight:** Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
 
  ### 🔹 Question 2: Average Days Until Customer Reallocation?
+```sql
 with customer_moves AS (
   SELECT
     customer_id,region_id,
@@ -174,6 +175,7 @@ SELECT
 FROM `alpine-biplane-472213-d8.data_bank.customer_nodes` a 
 inner join customer_moves b on a.customer_id = b.customer_id
 WHERE EXTRACT(YEAR FROM end_date) != 9999;
+```
 
 **Result:**  
 > 🕒 **Average Days Until Reallocation:** 14.6 days  
