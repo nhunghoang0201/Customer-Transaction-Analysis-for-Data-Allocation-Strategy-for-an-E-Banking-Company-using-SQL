@@ -131,7 +131,7 @@ The dataset contains **3 related tables** forming a relational schema:
 
 ### A. Data Exploration
 
-### 🔹 Question 1: How many customers are allocated to each region?
+#### 🔹 Question 1: How many customers are allocated to each region?
   
 **Query:**
 ```sql
@@ -163,7 +163,7 @@ SELECT * FROM running_balance;
 **Insight:**  Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
 
 ---
- ### 🔹 Question 2: Average Days Until Customer Reallocation?
+ #### 🔹 Question 2: Average Days Until Customer Reallocation?
  **Query:**
 ```sql
 with customer_moves AS (
@@ -190,7 +190,7 @@ WHERE EXTRACT(YEAR FROM end_date) != 9999;
  On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
 
 ---
-### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
+#### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
 
 **Query:**
 ```sql
@@ -241,9 +241,7 @@ GROUP BY region_name;
 - Suggests consistent reallocation cycle and stable customer movement pattern globally.
 
 ---
-## 💰 Question 4: Monthly Active Customers with Multiple Deposits and at Least One Purchase or Withdrawal
-
-### 🧠 SQL Query
+#### 💰 Question 4: Monthly Active Customers with Multiple Deposits and at Least One Purchase or Withdrawal
 
 **Query:**
 ```sql
@@ -352,6 +350,7 @@ WHERE year_month != '2020-01';
 | 1       | 254.146               |
 
 ** Visualization**
+
 <img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/33d2d46e-2568-4216-a546-48a56db8dec8" />
 
  
