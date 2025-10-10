@@ -542,23 +542,15 @@ Real-time allocation (Option 3) consumes more data (~273.8), about 8% higher tha
 
 ## 💡 Recommendations & Final Conclusion
 
-### ✅ Conclusion — Allocation Model Comparison
+#### ✅ Conclusion — Allocation Model Comparison
 
-| **Option** | **Description** | **Query Result** | **Data Volume Impact** | **Complexity** | **Insight** |
+| **Option** | **Description** | **Query Result** | **Data Volume Impact** | **Complexity** | **Strengths** | **Weaknesses** |
 |-------------|------------------|------------------|------------------------|----------------|--------------|
-| 🟩 **Option 1** | Data allocated based on **previous month’s closing balance** | `254.146` | ✅ *Low* — monthly snapshot only | ⭐ Simple | Efficient for monthly planning; lowest cost but less real-time accuracy. |
-| 🟨 **Option 2** | Data allocated based on **average balance in the last 30 days** | `254.293` | ⚖️ *Moderate* — rolling 30-day calculation | ⭐⭐⭐ High | Computationally intensive due to daily recalculation; accurate but hardest to maintain. |
-| 🟥 **Option 3** | Data allocated and updated **in real-time** | `273.816` | 🔺 *High* — continuous updates from transactions | ⭐⭐ Medium | Most accurate and dynamic but demands more storage; suitable for live monitoring. |
+| 🟩 **Option 1** | Data allocated based on **previous month’s closing balance** | `254.146` | ✅ *Low* — monthly snapshot only | ⭐ Simple | • Simple and stable — data only updated monthly.<br>• Lowest computational cost and easiest to maintain.<br>• Ideal for monthly planning and budget allocation. |• Not responsive to within-month fluctuations.<br>• Can be manipulated — users might top up large amounts near month-end to inflate their closing balance. |
+| 🟨 **Option 2** | Data allocated based on **average balance in the last 30 days** | `254.293` | ⚖️ *Moderate* — rolling 30-day calculation | ⭐⭐⭐ High | • Reflects recent performance trends.<br>• Balances accuracy and stability better than monthly snapshots.<br>• Useful for rolling forecasts and near-term planning. | • Requires daily recalculation of 30-day rolling average → heavy compute load.<br>• Complex to implement and maintain.<br>• Slower query performance for large datasets. |
+| 🟥 **Option 3** | Data allocated and updated **in real-time** | `273.816` | 🔺 *High* — continuous updates from transactions | ⭐⭐ Medium | • Highest accuracy and responsiveness.<br>• Best suited for live dashboards and operational monitoring.<br>• Captures immediate changes in balances. | • Very high data volume and storage demand.<br>• Continuous data updates increase infrastructure costs.<br>• Overkill for periodic or strategic analysis. |
 
-###✅ Strengths & Weaknesses Analysis
-
-| **Option** | **Strengths 💪** | **Weaknesses ⚠️** |
-|-------------|------------------|-------------------|
-| 🟩 **Option 1 — Previous Month’s Closing Balance** | • Simple and stable — data only updated monthly.<br>• Lowest computational cost and easiest to maintain.<br>• Ideal for monthly planning and budget allocation. | • Not responsive to within-month fluctuations.<br>• Can be manipulated — users might top up large amounts near month-end to inflate their closing balance. |
-| 🟨 **Option 2 — Average Balance in the Last 30 Days** | • Reflects recent performance trends.<br>• Balances accuracy and stability better than monthly snapshots.<br>• Useful for rolling forecasts and near-term planning. | • Requires daily recalculation of 30-day rolling average → heavy compute load.<br>• Complex to implement and maintain.<br>• Slower query performance for large datasets. |
-| 🟥 **Option 3 — Real-Time Allocation** | • Highest accuracy and responsiveness.<br>• Best suited for live dashboards and operational monitoring.<br>• Captures immediate changes in balances. | • Very high data volume and storage demand.<br>• Continuous data updates increase infrastructure costs.<br>• Overkill for periodic or strategic analysis. |
-
-### ✅ Recommendation
+#### ✅ Recommendation
 **Option 1** offers the **best balance between accuracy, simplicity, and cost efficiency**, making it ideal for monthly operational reporting.  
 If higher granularity is required (e.g., weekly financial reviews), **Option 2** could be considered — but it requires heavier processing power.
 
