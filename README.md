@@ -159,7 +159,7 @@ SELECT * FROM running_balance;
 | 🌍 Europe | 88 |
 
 **Insight:** Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
-
+---
  ### 🔹 Question 2: Average Days Until Customer Reallocation?
 ```sql
 with customer_moves AS (
@@ -182,7 +182,7 @@ WHERE EXTRACT(YEAR FROM end_date) != 9999;
 
 **Insight:**  
 On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
-
+---
 ### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
 
 ```sql
@@ -214,6 +214,7 @@ FROM (
   WHERE EXTRACT(YEAR FROM end_date) != 9999
 ) a
 GROUP BY region_name;
+```
 
 **Result**
 | Region      | Median Days | P80 | P95 |
@@ -231,6 +232,7 @@ GROUP BY region_name;
 
 - Suggests consistent reallocation cycle and stable customer movement pattern globally.
 
+---
 ## 💰 Question 4: Monthly Active Customers with Multiple Deposits and at Least One Purchase or Withdrawal
 
 ### 🧠 SQL Query
@@ -253,7 +255,7 @@ FROM customer_qualified
 WHERE deposit_count >= 1 
   AND purchase_withdrawal_count >= 1
 GROUP BY year, month;
-...
+```
 
 **Result**
 | Year | Month | Customer Count |
@@ -269,10 +271,11 @@ GROUP BY year, month;
 - Significant drop in April (137), suggesting possible external or seasonal factors.  
 
 - Consistent upward trend from January to March indicates growing transaction activity.
-
+---
 ### B. Data Allocation Analysis
 
 -- (Option 1) Data allocated based on previous month’s closing balance
+```sql
 WITH month_list AS (
   SELECT FORMAT_DATE('%Y-%m', month) AS year_month
   FROM UNNEST(
@@ -328,7 +331,7 @@ SELECT
   AVG(total_data_required_option1) AS avg_data_required_option1
 FROM opt1
 WHERE year_month != '2020-01';
-
+```
 **Result**
 | Option | Average Data Required |
 |---------|------------------------|
@@ -338,8 +341,9 @@ WHERE year_month != '2020-01';
 <img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/33d2d46e-2568-4216-a546-48a56db8dec8" />
 
 => Option 1 requires ~254.1 units of data on average — efficient and stable since it relies on prior month balances.
-
+---
 -- (Option 2) Data allocated based on 30-day rolling average balance
+```sql
 WITH day_list AS (
   SELECT DATE(day) AS txn_day
   FROM UNNEST(
@@ -410,6 +414,7 @@ monthly_peak AS (
 SELECT AVG(max_data_required_in_month)
 FROM monthly_peak
 WHERE NOT (year = 2020 AND month = 1);
+```
 
 **Query**
 | Option | Average Data Required |
@@ -422,6 +427,7 @@ WHERE NOT (year = 2020 AND month = 1);
 -- (Option 3) Data allocated based on realtime average balance
 
 -- Create a list of all calendar days in the dataset
+```sql
 WITH day_list AS (
   SELECT 
     DATE(day) AS txn_day
@@ -501,7 +507,7 @@ SELECT
   AVG(total_data_required_option3) AS avg_data_required_option3
 FROM monthly_max
 WHERE NOT (year = 2020 AND month = 1)
-
+```
 **Result:**
 | Option | Average Data Required |
 |---------|------------------------|
