@@ -126,8 +126,12 @@ The dataset contains **3 related tables** forming a relational schema:
 
 ## 📊 Analysis & Key Insights  
 
-### 🔹 Step 1: Compute Running Balance  
+### A. Data Exploration
 
+### 🔹 Question 1: How many customers are allocated to each region?
+  
+
+**Query:**
 ```sql
 WITH netamount AS (
   SELECT customer_id,
@@ -142,3 +146,202 @@ running_balance AS (
   FROM netamount
 )
 SELECT * FROM running_balance;
+
+**Result:**
+
+| Region | Customer Count |
+|--------|----------------|
+| 🌏 Australia | 110 |
+| 🌎 America | 105 |
+| 🌍 Africa | 102 |
+| 🌏 Asia | 95 |
+| 🌍 Europe | 88 |
+
+**Insight:** Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
+
+ ### 🔹 Question 2: Average Days Until Customer Reallocation?
+```sql
+with customer_moves AS (
+  SELECT
+    customer_id,region_id,
+    count(node_id) as node_count_1
+  FROM `alpine-biplane-472213-d8.data_bank.customer_nodes`
+  group by customer_id,region_id
+  having count(node_id)>=2
+)
+SELECT 
+  AVG(DATE_DIFF(end_date, start_date, DAY)) AS avg_days_until_reallocate
+FROM `alpine-biplane-472213-d8.data_bank.customer_nodes` a 
+inner join customer_moves b on a.customer_id = b.customer_id
+WHERE EXTRACT(YEAR FROM end_date) != 9999;
+
+**Result:**  
+> 🕒 **Average Days Until Reallocation:** 14.6 days  
+
+**Insight:**  
+On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
+
+### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
+
+```sql
+WITH customer_moves AS (
+  SELECT
+    customer_id,
+    region_id,
+    COUNT(node_id)
+  FROM `alpine-biplane-472213-d8.data_bank.customer_nodes`
+  GROUP BY customer_id, region_id
+  HAVING COUNT(node_id) >= 2
+)
+SELECT
+  region_name,
+  APPROX_QUANTILES(days_until_reallocate, 100)[OFFSET(50)] AS median_days,
+  APPROX_QUANTILES(days_until_reallocate, 100)[OFFSET(80)] AS p80_days,
+  APPROX_QUANTILES(days_until_reallocate, 100)[OFFSET(95)] AS p95_days
+FROM (
+  SELECT 
+    a.customer_id,
+    b.region_id,
+    c.region_name,
+    DATE_DIFF(end_date, start_date, DAY) AS days_until_reallocate
+  FROM `alpine-biplane-472213-d8.data_bank.customer_nodes` a
+  INNER JOIN customer_moves b 
+    ON a.customer_id = b.customer_id AND a.region_id = b.region_id
+  INNER JOIN `alpine-biplane-472213-d8.data_bank.regions` c 
+    ON a.region_id = c.region_id
+  WHERE EXTRACT(YEAR FROM end_date) != 9999
+) a
+GROUP BY region_name;
+
+**Result**
+| Region      | Median Days | P80 | P95 |
+|--------------|-------------|-----|-----|
+| Australia    | 15          | 23  | 28  |
+| America      | 15          | 23  | 28  |
+| Africa       | 15          | 24  | 28  |
+| Asia         | 15          | 23  | 28  |
+| Europe       | 15          | 24  | 28  |
+
+**Insight:**  
+- Median reallocation time is ~15 days across all regions.
+
+- 80th–95th percentile ranges between 23–28 days.
+
+- Suggests consistent reallocation cycle and stable customer movement pattern globally.
+
+## 💰 Question 4: Monthly Active Customers with Multiple Deposits and at Least One Purchase or Withdrawal
+
+### 🧠 SQL Query
+```sql
+WITH customer_qualified AS (
+  SELECT 
+    customer_id,
+    EXTRACT(YEAR FROM txn_date) AS year,
+    EXTRACT(MONTH FROM txn_date) AS month,
+    SUM(CASE WHEN LOWER(txn_type) = 'deposit' THEN 1 ELSE 0 END) AS deposit_count,
+    SUM(CASE WHEN LOWER(txn_type) IN ('purchase', 'withdrawal') THEN 1 ELSE 0 END) AS purchase_withdrawal_count
+  FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`
+  GROUP BY customer_id, EXTRACT(YEAR FROM txn_date), EXTRACT(MONTH FROM txn_date)
+)
+SELECT 
+  year, 
+  month, 
+  COUNT(customer_id) AS customer_count
+FROM customer_qualified
+WHERE deposit_count >= 1 
+  AND purchase_withdrawal_count >= 1
+GROUP BY year, month;
+
+**Result**
+| Year | Month | Customer Count |
+|------|--------|----------------|
+| 2020 | 1      | 294            |
+| 2020 | 2      | 300            |
+| 2020 | 3      | 330            |
+| 2020 | 4      | 137            |
+
+**Insight**
+- Customer engagement peaked in March 2020 with 330 active users.  
+
+- Significant drop in April (137), suggesting possible external or seasonal factors.  
+
+- Consistent upward trend from January to March indicates growing transaction activity.
+
+### B. Data Allocation Analysis
+
+-- (Option 1) Data allocated based on previous month’s closing balance
+WITH month_list AS (
+  SELECT FORMAT_DATE('%Y-%m', month) AS year_month
+  FROM UNNEST(
+    GENERATE_DATE_ARRAY(
+      (SELECT MIN(DATE(txn_date)) FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`),
+      (SELECT MAX(DATE(txn_date)) FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`),
+      INTERVAL 1 MONTH
+    )
+  ) AS month
+),
+transactionvalue AS (
+  SELECT 
+    customer_id,
+    FORMAT_DATE('%Y-%m', DATE(txn_date)) AS year_month,
+    SUM(CASE WHEN txn_type = 'deposit' THEN txn_amount ELSE -txn_amount END) AS transaction_value
+  FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`
+  GROUP BY customer_id, year_month
+),
+all_months AS (
+  SELECT c.customer_id, m.year_month
+  FROM (SELECT DISTINCT customer_id FROM transactionvalue) c
+  CROSS JOIN month_list m
+),
+filled_months AS (
+  SELECT a.customer_id, a.year_month, COALESCE(t.transaction_value, 0) AS transaction_value
+  FROM all_months a
+  LEFT JOIN transactionvalue t
+    ON a.customer_id = t.customer_id AND a.year_month = t.year_month
+),
+closingbalance AS (
+  SELECT 
+    customer_id,
+    year_month,
+    SUM(transaction_value) OVER (PARTITION BY customer_id ORDER BY year_month ASC) AS closing_balance
+  FROM filled_months
+),
+with_prev AS (
+  SELECT 
+    customer_id,
+    year_month,
+    closing_balance,
+    LAG(closing_balance) OVER (PARTITION BY customer_id ORDER BY year_month) AS prev_closing_balance
+  FROM closingbalance
+),
+opt1 AS (
+  SELECT 
+    year_month,
+    SUM(CASE WHEN prev_closing_balance > 0 THEN prev_closing_balance ELSE 0 END) AS total_data_required_option1
+  FROM with_prev
+  GROUP BY year_month
+)
+SELECT 
+  AVG(total_data_required_option1) AS avg_data_required_option1
+FROM opt1
+WHERE year_month != '2020-01';
+
+**Result**
+| Option | Average Data Required |
+|---------|------------------------|
+| 1       | 254.146               |
+
+** Visualize**
+
+
+
+
+
+
+
+
+
+
+
+
+
