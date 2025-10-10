@@ -23,15 +23,12 @@ Data Bank, a next-generation Neo-Bank — a digital-only financial institution w
 How much data storage should be provisioned for customers under different allocation strategies?
 
 Specifically, the project aims to answer:
-1. How do customer balances evolve?
-→ Calculate running and closing balances for each customer.
-
-2. How much data would be required under each allocation option?
+1. How much data would be required under each allocation option?
 Option 1: Data allocated based on the previous month’s closing balance.
 Option 2: Data allocated based on the average balance in the last 30 days.
 Option 3: Data allocated and updated in real-time.
 
-3. Which option provides the best balance between accuracy and efficiency?
+2. Which option provides the best balance between accuracy and efficiency?
 
 ### 👥 Target Audience
 
@@ -65,14 +62,15 @@ The dataset contains **3 related tables** forming a relational schema:
 #### Table Schema & Data Snapshot  
 
 <details>
-  <summary>🗺️ #####Table 1: regions</summary>
+  <summary>🗺️ Table 1: regions</summary>
 
 | Column Name | Data Type | Description |
 |--------------|------------|-------------|
 | region_id | INT | Unique identifier for each region |
 | region_name | STRING | Name of the geographic region |
 
-**Sample Data**
+***Sample Data***
+*
 | region_id | region_name |
 |------------|--------------|
 | 1 | Africa |
@@ -92,7 +90,8 @@ The dataset contains **3 related tables** forming a relational schema:
 | start_date | DATE | Allocation start date |
 | end_date | DATE | Allocation end date (until reallocation) |
 
-**Sample Data**
+***Sample Data***
+
 | customer_id | region_id | node_id | start_date | end_date |
 |--------------|------------|----------|-------------|-----------|
 | 1 | 3 | 4 | 2020-01-02 | 2020-01-03 |
@@ -113,7 +112,8 @@ The dataset contains **3 related tables** forming a relational schema:
 | txn_type | STRING | Type of transaction (`deposit`, `withdrawal`, or `purchase`) |
 | txn_amount | FLOAT | Transaction amount |
 
-**Sample Data**
+***Sample Data***
+
 | customer_id | txn_date | txn_type | txn_amount |
 |--------------|-----------|-----------|-------------|
 | 429 | 2020-01-21 | deposit | 82 |
@@ -130,7 +130,6 @@ The dataset contains **3 related tables** forming a relational schema:
 
 ### 🔹 Question 1: How many customers are allocated to each region?
   
-
 **Query:**
 ```sql
 WITH netamount AS (
@@ -159,8 +158,10 @@ SELECT * FROM running_balance;
 | 🌍 Europe | 88 |
 
 **Insight:** Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
+
 ---
  ### 🔹 Question 2: Average Days Until Customer Reallocation?
+ **Query:**
 ```sql
 with customer_moves AS (
   SELECT
@@ -182,9 +183,11 @@ WHERE EXTRACT(YEAR FROM end_date) != 9999;
 
 **Insight:**  
 On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
+
 ---
 ### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
 
+**Query:**
 ```sql
 WITH customer_moves AS (
   SELECT
@@ -236,6 +239,8 @@ GROUP BY region_name;
 ## 💰 Question 4: Monthly Active Customers with Multiple Deposits and at Least One Purchase or Withdrawal
 
 ### 🧠 SQL Query
+
+**Query:**
 ```sql
 WITH customer_qualified AS (
   SELECT 
@@ -271,10 +276,13 @@ GROUP BY year, month;
 - Significant drop in April (137), suggesting possible external or seasonal factors.  
 
 - Consistent upward trend from January to March indicates growing transaction activity.
+
 ---
+
 ### B. Data Allocation Analysis
 
-####(Option 1) Data allocated based on previous month’s closing balance
+#### Option 1: Data allocated based on previous month’s closing balance
+
 ```sql
 WITH month_list AS (
   SELECT FORMAT_DATE('%Y-%m', month) AS year_month
@@ -332,6 +340,7 @@ SELECT
 FROM opt1
 WHERE year_month != '2020-01';
 ```
+
 **Result**
 | Option | Average Data Required |
 |---------|------------------------|
@@ -341,9 +350,12 @@ WHERE year_month != '2020-01';
 <img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/33d2d46e-2568-4216-a546-48a56db8dec8" />
 
  
- ===> Option 1 requires ~254.1 units of data on average — efficient and stable since it relies on prior month balances.
+ **Insight:** Option 1 requires ~254.1 units of data on average — efficient and stable since it relies on prior month balances.
+
 ---
+
 #### Option 2: Data allocated based on 30-day rolling average balance
+**Query:**
 ```sql
 WITH day_list AS (
   SELECT DATE(day) AS txn_day
@@ -417,18 +429,19 @@ FROM monthly_peak
 WHERE NOT (year = 2020 AND month = 1);
 ```
 
-**Query**
+**Result**
 | Option | Average Data Required |
 |---------|------------------------|
 | 2       | 254.293               |
 
-** Visualization**
+**Visualization**
+
 <img width="538" height="374" alt="Image" src="https://github.com/user-attachments/assets/0be2d0b2-4f28-4562-ad4f-e2a52a3c4714" />
 
 #### Option 3 Data allocated based on realtime average balance
 
--- Create a list of all calendar days in the dataset
 ```sql
+-- Create a list of all calendar days in the dataset
 WITH day_list AS (
   SELECT 
     DATE(day) AS txn_day
@@ -514,29 +527,36 @@ WHERE NOT (year = 2020 AND month = 1)
 |---------|------------------------|
 | 3       | 273.816               |
 
+
 **Visualization:**
 
 <img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/027896b6-9f68-43db-b542-a3ea5bdea5d5" />
 
 **Insight**
-Real-time allocation (Option 3) consumes more data (~273.8), about 8% higher than periodic methods — offering the most responsiveness at higher storage cost.
+Real-time allocation (Option 3) consumes more data (~273.8), about 8% higher than periodic methods, offering the most responsiveness at a higher storage cost.
 
 
 ## 💡 Recommendations & Final Conclusion
 
+### ✅ Conclusion — Allocation Model Comparison
+
 | **Option** | **Description** | **Query Result** | **Data Volume Impact** | **Complexity** | **Insight** |
 |-------------|------------------|------------------|------------------------|----------------|--------------|
-| 🟩 **Option 1** | Data allocated based on **previous month’s closing balance** | `254.146` | ✅ *Low* — monthly snapshot only | ⭐ Simple | Efficient for monthly planning; low computation cost but less granular. |
-| 🟨 **Option 2** | Data allocated based on **average balance in the last 30 days** | `254.293` | ⚖️ *Moderate* — rolling average over 30 days | ⭐⭐ Medium | Best trade-off: stable, near-accurate, and manageable in size. |
-| 🟥 **Option 3** | Data allocated and updated **in real-time** | `273.816` | 🔺 *High* — continuous updates from transactions | ⭐⭐⭐ Complex | Most accurate but resource-heavy; suitable for real-time monitoring only. |
+| 🟩 **Option 1** | Data allocated based on **previous month’s closing balance** | `254.146` | ✅ *Low* — monthly snapshot only | ⭐ Simple | Efficient for monthly planning; lowest cost but less real-time accuracy. |
+| 🟨 **Option 2** | Data allocated based on **average balance in the last 30 days** | `254.293` | ⚖️ *Moderate* — rolling 30-day calculation | ⭐⭐⭐ High | Computationally intensive due to daily recalculation; accurate but hardest to maintain. |
+| 🟥 **Option 3** | Data allocated and updated **in real-time** | `273.816` | 🔺 *High* — continuous updates from transactions | ⭐⭐ Medium | Most accurate and dynamic but demands more storage; suitable for live monitoring. |
 
----
+###✅ Strengths & Weaknesses Analysis
 
-### 🧠 Insight
+| **Option** | **Strengths 💪** | **Weaknesses ⚠️** |
+|-------------|------------------|-------------------|
+| 🟩 **Option 1 — Previous Month’s Closing Balance** | • Simple and stable — data only updated monthly.<br>• Lowest computational cost and easiest to maintain.<br>• Ideal for monthly planning and budget allocation. | • Not responsive to within-month fluctuations.<br>• Can be manipulated — users might top up large amounts near month-end to inflate their closing balance. |
+| 🟨 **Option 2 — Average Balance in the Last 30 Days** | • Reflects recent performance trends.<br>• Balances accuracy and stability better than monthly snapshots.<br>• Useful for rolling forecasts and near-term planning. | • Requires daily recalculation of 30-day rolling average → heavy compute load.<br>• Complex to implement and maintain.<br>• Slower query performance for large datasets. |
+| 🟥 **Option 3 — Real-Time Allocation** | • Highest accuracy and responsiveness.<br>• Best suited for live dashboards and operational monitoring.<br>• Captures immediate changes in balances. | • Very high data volume and storage demand.<br>• Continuous data updates increase infrastructure costs.<br>• Overkill for periodic or strategic analysis. |
 
-Option **2 (Average Balance in Last 30 Days)** offers the **best balance between accuracy and efficiency**.  
-It closely tracks real account behavior with only a marginal increase in data (~0.1% higher than Option 1)  
-while avoiding the heavy system load required for real-time allocation.
+### ✅ Recommendation
+**Option 1** offers the **best balance between accuracy, simplicity, and cost efficiency**, making it ideal for monthly operational reporting.  
+If higher granularity is required (e.g., weekly financial reviews), **Option 2** could be considered — but it requires heavier processing power.
 
 
 
