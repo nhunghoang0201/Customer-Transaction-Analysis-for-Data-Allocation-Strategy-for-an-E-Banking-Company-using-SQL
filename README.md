@@ -274,7 +274,7 @@ GROUP BY year, month;
 ---
 ### B. Data Allocation Analysis
 
--- (Option 1) Data allocated based on previous month’s closing balance
+####(Option 1) Data allocated based on previous month’s closing balance
 ```sql
 WITH month_list AS (
   SELECT FORMAT_DATE('%Y-%m', month) AS year_month
@@ -340,9 +340,10 @@ WHERE year_month != '2020-01';
 ** Visualization**
 <img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/33d2d46e-2568-4216-a546-48a56db8dec8" />
 
-=> Option 1 requires ~254.1 units of data on average — efficient and stable since it relies on prior month balances.
+ 
+ ===> Option 1 requires ~254.1 units of data on average — efficient and stable since it relies on prior month balances.
 ---
--- (Option 2) Data allocated based on 30-day rolling average balance
+#### Option 2: Data allocated based on 30-day rolling average balance
 ```sql
 WITH day_list AS (
   SELECT DATE(day) AS txn_day
@@ -424,7 +425,7 @@ WHERE NOT (year = 2020 AND month = 1);
 ** Visualization**
 <img width="538" height="374" alt="Image" src="https://github.com/user-attachments/assets/0be2d0b2-4f28-4562-ad4f-e2a52a3c4714" />
 
--- (Option 3) Data allocated based on realtime average balance
+#### Option 3 Data allocated based on realtime average balance
 
 -- Create a list of all calendar days in the dataset
 ```sql
