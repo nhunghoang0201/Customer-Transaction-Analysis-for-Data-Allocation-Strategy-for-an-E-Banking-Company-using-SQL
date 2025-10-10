@@ -132,7 +132,6 @@ The dataset contains **3 related tables** forming a relational schema:
   
 
 **Query:**
-```sql
 WITH netamount AS (
   SELECT customer_id,
          txn_date,
@@ -160,7 +159,6 @@ SELECT * FROM running_balance;
 **Insight:** Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
 
  ### 🔹 Question 2: Average Days Until Customer Reallocation?
-```sql
 with customer_moves AS (
   SELECT
     customer_id,region_id,
