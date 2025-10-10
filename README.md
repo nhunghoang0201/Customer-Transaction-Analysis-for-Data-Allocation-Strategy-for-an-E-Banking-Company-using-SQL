@@ -331,7 +331,203 @@ WHERE year_month != '2020-01';
 |---------|------------------------|
 | 1       | 254.146               |
 
-** Visualize**
+** Visualization**
+<img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/33d2d46e-2568-4216-a546-48a56db8dec8" />
+
+=> Option 1 requires ~254.1 units of data on average — efficient and stable since it relies on prior month balances.
+
+-- (Option 2) Data allocated based on 30-day rolling average balance
+WITH day_list AS (
+  SELECT DATE(day) AS txn_day
+  FROM UNNEST(
+    GENERATE_DATE_ARRAY(
+      (SELECT MIN(DATE(txn_date)) FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`),
+      (SELECT MAX(DATE(txn_date)) FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`),
+      INTERVAL 1 DAY
+    )
+  ) AS day
+),
+daily_txn AS (
+  SELECT 
+    customer_id,
+    DATE(txn_date) AS txn_day,
+    SUM(CASE WHEN txn_type = 'deposit' THEN txn_amount ELSE -txn_amount END) AS net_amount
+  FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`
+  GROUP BY customer_id, txn_day
+),
+all_days AS (
+  SELECT c.customer_id, d.txn_day
+  FROM (SELECT DISTINCT customer_id FROM daily_txn) c
+  CROSS JOIN day_list d
+),
+filled_days AS (
+  SELECT a.customer_id, a.txn_day, COALESCE(t.net_amount, 0) AS net_amount
+  FROM all_days a
+  LEFT JOIN daily_txn t
+    ON a.customer_id = t.customer_id AND a.txn_day = t.txn_day
+),
+running_balance AS (
+  SELECT 
+    customer_id,
+    txn_day,
+    SUM(net_amount) OVER (PARTITION BY customer_id ORDER BY txn_day) AS balance
+  FROM filled_days
+),
+avg_balance_30days AS (
+  SELECT 
+    customer_id,
+    txn_day,
+    AVG(balance) OVER (
+      PARTITION BY customer_id
+      ORDER BY txn_day
+      ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
+    ) AS avg_balance_30d
+  FROM running_balance
+),
+daily_data_need AS (
+  SELECT txn_day, SUM(CASE WHEN avg_balance_30d > 0 THEN avg_balance_30d ELSE 0 END) AS total_data_required
+  FROM avg_balance_30days
+  GROUP BY txn_day
+),
+max_data_per_month AS (
+  SELECT 
+    EXTRACT(YEAR FROM txn_day) AS year,
+    EXTRACT(MONTH FROM txn_day) AS month,
+    txn_day AS peak_day,
+    total_data_required,
+    RANK() OVER (PARTITION BY EXTRACT(YEAR FROM txn_day), EXTRACT(MONTH FROM txn_day)
+                 ORDER BY total_data_required DESC) AS rnk
+  FROM daily_data_need
+),
+monthly_peak AS (
+  SELECT year, month, peak_day, total_data_required AS max_data_required_in_month
+  FROM max_data_per_month
+  WHERE rnk = 1
+)
+SELECT AVG(max_data_required_in_month)
+FROM monthly_peak
+WHERE NOT (year = 2020 AND month = 1);
+
+**Query**
+| Option | Average Data Required |
+|---------|------------------------|
+| 2       | 254.293               |
+
+** Visualization**
+<img width="538" height="374" alt="Image" src="https://github.com/user-attachments/assets/0be2d0b2-4f28-4562-ad4f-e2a52a3c4714" />
+
+-- (Option 3) Data allocated based on realtime average balance
+
+-- Create a list of all calendar days in the dataset
+WITH day_list AS (
+  SELECT 
+    DATE(day) AS txn_day
+  FROM UNNEST(
+    GENERATE_DATE_ARRAY(
+      (SELECT MIN(DATE(txn_date)) FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`),
+      (SELECT MAX(DATE(txn_date)) FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`),
+      INTERVAL 1 DAY
+    )
+  ) AS day
+),
+
+-- Aggregate daily transactions per customer
+daily_txn AS (
+  SELECT 
+    customer_id,
+    DATE(txn_date) AS txn_day,
+    SUM(CASE WHEN txn_type = 'deposit' THEN txn_amount ELSE -txn_amount END) AS net_amount
+  FROM `alpine-biplane-472213-d8.data_bank.customer_transactions`
+  GROUP BY customer_id, txn_day
+),
+
+-- Ensure every customer has all days
+all_days AS (
+  SELECT 
+    c.customer_id,
+    d.txn_day
+  FROM (SELECT DISTINCT customer_id FROM daily_txn) c
+  CROSS JOIN day_list d
+),
+
+-- Fill missing transactions with 0
+filled_days AS (
+  SELECT 
+    a.customer_id,
+    a.txn_day,
+    COALESCE(t.net_amount, 0) AS net_amount
+  FROM all_days a
+  LEFT JOIN daily_txn t
+    ON a.customer_id = t.customer_id
+   AND a.txn_day = t.txn_day
+),
+
+-- Compute cumulative running balance (including no-txn days)
+running_balance AS (
+  SELECT 
+    customer_id,
+    txn_day,
+    SUM(net_amount) OVER (
+      PARTITION BY customer_id
+      ORDER BY txn_day
+    ) AS balance
+  FROM filled_days
+),
+
+-- Compute daily total data requirement (sum of all positive balances)
+daily_data AS (
+  SELECT 
+    txn_day,
+    SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END) AS total_data
+  FROM running_balance
+  GROUP BY txn_day
+)
+
+-- Find peak (max) data per month
+monthly_max AS (
+  SELECT 
+    EXTRACT(YEAR FROM txn_day) AS year,
+    EXTRACT(MONTH FROM txn_day) AS month,
+    MAX(total_data) AS total_data_required_option3
+  FROM daily_data
+  GROUP BY year, month
+),
+
+-- Average required data (excluding first month)
+SELECT 
+  AVG(total_data_required_option3) AS avg_data_required_option3
+FROM monthly_max
+WHERE NOT (year = 2020 AND month = 1)
+
+**Result:**
+| Option | Average Data Required |
+|---------|------------------------|
+| 3       | 273.816               |
+
+**Visualization:**
+
+<img width="545" height="374" alt="Image" src="https://github.com/user-attachments/assets/027896b6-9f68-43db-b542-a3ea5bdea5d5" />
+
+**Insight**
+Real-time allocation (Option 3) consumes more data (~273.8), about 8% higher than periodic methods — offering the most responsiveness at higher storage cost.
+
+
+## 💡 Recommendations & Final Conclusion
+
+| **Option** | **Description** | **Query Result** | **Data Volume Impact** | **Complexity** | **Insight** |
+|-------------|------------------|------------------|------------------------|----------------|--------------|
+| 🟩 **Option 1** | Data allocated based on **previous month’s closing balance** | `254.146` | ✅ *Low* — monthly snapshot only | ⭐ Simple | Efficient for monthly planning; low computation cost but less granular. |
+| 🟨 **Option 2** | Data allocated based on **average balance in the last 30 days** | `254.293` | ⚖️ *Moderate* — rolling average over 30 days | ⭐⭐ Medium | Best trade-off: stable, near-accurate, and manageable in size. |
+| 🟥 **Option 3** | Data allocated and updated **in real-time** | `273.816` | 🔺 *High* — continuous updates from transactions | ⭐⭐⭐ Complex | Most accurate but resource-heavy; suitable for real-time monitoring only. |
+
+---
+
+### 🧠 Insight
+
+Option **2 (Average Balance in Last 30 Days)** offers the **best balance between accuracy and efficiency**.  
+It closely tracks real account behavior with only a marginal increase in data (~0.1% higher than Option 1)  
+while avoiding the heavy system load required for real-time allocation.
+
 
 
 
