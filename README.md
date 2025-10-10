@@ -132,6 +132,7 @@ The dataset contains **3 related tables** forming a relational schema:
   
 
 **Query:**
+```sql
 WITH netamount AS (
   SELECT customer_id,
          txn_date,
