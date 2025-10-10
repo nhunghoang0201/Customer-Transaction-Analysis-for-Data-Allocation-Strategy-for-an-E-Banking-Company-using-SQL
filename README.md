@@ -146,6 +146,7 @@ running_balance AS (
   FROM netamount
 )
 SELECT * FROM running_balance;
+...
 
 **Result:**
 
