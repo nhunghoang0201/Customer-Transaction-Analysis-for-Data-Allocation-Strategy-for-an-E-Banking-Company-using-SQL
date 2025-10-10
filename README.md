@@ -250,6 +250,7 @@ FROM customer_qualified
 WHERE deposit_count >= 1 
   AND purchase_withdrawal_count >= 1
 GROUP BY year, month;
+...
 
 **Result**
 | Year | Month | Customer Count |
