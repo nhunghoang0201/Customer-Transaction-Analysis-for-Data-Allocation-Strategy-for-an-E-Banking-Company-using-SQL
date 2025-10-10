@@ -23,7 +23,7 @@ Data Bank, a next-generation Neo-Bank — a digital-only financial institution w
 How much data storage should be provisioned for customers under different allocation strategies?
 
 Specifically, the project aims to answer:
-1. How do customer balances evolve over time?
+1. How do customer balances evolve?
 → Calculate running and closing balances for each customer.
 
 2. How much data would be required under each allocation option?
@@ -65,7 +65,7 @@ The dataset contains **3 related tables** forming a relational schema:
 #### Table Schema & Data Snapshot  
 
 <details>
-  <summary>🗺️ Table 1: regions</summary>
+  <summary>🗺️ #####Table 1: regions</summary>
 
 | Column Name | Data Type | Description |
 |--------------|------------|-------------|
