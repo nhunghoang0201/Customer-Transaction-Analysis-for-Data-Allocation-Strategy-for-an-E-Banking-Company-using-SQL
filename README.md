@@ -157,7 +157,7 @@ SELECT * FROM running_balance;
 | 🌏 Asia | 95 |
 | 🌍 Europe | 88 |
 
-**Insight:** Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
+**Insight:**  Australia and America have the highest customer bases, while Europe has the lowest — suggesting higher data capacity may be needed in Oceania and America regions.
 
 ---
  ### 🔹 Question 2: Average Days Until Customer Reallocation?
@@ -179,10 +179,12 @@ WHERE EXTRACT(YEAR FROM end_date) != 9999;
 ```
 
 **Result:**  
-> 🕒 **Average Days Until Reallocation:** 14.6 days  
+| avg_days_until_reallocate |
+|--------|
+| 14.6 | 
 
 **Insight:**  
-On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
+> On average, customers are moved to a different node every **~15 days**, reflecting a proactive data security measure to minimize risks of data breaches and ensure system resilience.
 
 ---
 ### 🔹 Question 3: Median, 80th, and 95th Percentile of Reallocation Days by Region
